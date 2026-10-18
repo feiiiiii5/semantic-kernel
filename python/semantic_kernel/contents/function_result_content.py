@@ -138,13 +138,16 @@ class FunctionResultContent(KernelContent):
         if isinstance(result, TextContent):
             res = result.text
         elif isinstance(result, ChatMessageContent):
-            if isinstance(result.items[0], TextContent):
+            if not result.items:
+                res = str(result)
+            elif isinstance(result.items[0], TextContent):
                 res = result.items[0].text
             elif isinstance(result.items[0], ImageContent):
                 res = result.items[0].data_uri
             elif isinstance(result.items[0], FunctionResultContent):
                 res = result.items[0].result
-            res = str(result)
+            else:
+                res = str(result)
         else:
             res = result
         return cls(

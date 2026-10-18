@@ -116,6 +116,30 @@ def test_from_fcc_and_result(result: any):
     assert frc.metadata == {"test": "test", "test2": "test2"}
 
 
+def test_from_fcc_and_result_unwraps_first_item():
+    """The first item of a ChatMessageContent result is unwrapped, not turned into the message string."""
+    fcc = FunctionCallContent(id="test", name="test-function", arguments='{"input": "world"}')
+
+    nested = ChatMessageContent(
+        role="tool", items=[FunctionResultContent(id="test", name="test", result="Hello world!")]
+    )
+    assert FunctionResultContent.from_function_call_content_and_result(fcc, nested).result == "Hello world!"
+
+    image = ImageContent(data=b"some-image", mime_type="image/png")
+    image_message = ChatMessageContent(role="assistant", items=[image])
+    assert FunctionResultContent.from_function_call_content_and_result(fcc, image_message).result == image.data_uri
+
+    text_message = ChatMessageContent(role="assistant", content="Hello world!")
+    assert FunctionResultContent.from_function_call_content_and_result(fcc, text_message).result == "Hello world!"
+
+
+def test_from_fcc_and_result_without_items():
+    """A ChatMessageContent result without items must not raise an IndexError."""
+    fcc = FunctionCallContent(id="test", name="test-function", arguments='{"input": "world"}')
+    frc = FunctionResultContent.from_function_call_content_and_result(fcc, ChatMessageContent(role="assistant"))
+    assert frc.result == ""
+
+
 def test_to_cmc():
     frc = FunctionResultContent(id="test", name="test-function", result="test-result")
     cmc = frc.to_chat_message_content()
