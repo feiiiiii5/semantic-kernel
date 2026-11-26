@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft. All rights reserved.
 
+import re
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
@@ -230,3 +231,17 @@ def test_from_string_invalid():
         match="The specified type `invalid` is not supported. Allowed types are: `auto`, `none`, `required`.",
     ):
         FunctionChoiceBehavior.from_string("invalid")
+
+
+@pytest.mark.parametrize(
+    ("behavior_type", "shown"),
+    [("bogus", "bogus"), ("", ""), (None, "None")],
+)
+def test_from_dict_invalid_type(behavior_type, shown):
+    with pytest.raises(
+        ServiceInitializationError,
+        match=re.escape(
+            f"The specified type `{shown}` is not supported. Allowed types are: `auto`, `none`, `required`."
+        ),
+    ):
+        FunctionChoiceBehavior.from_dict({"type": behavior_type})

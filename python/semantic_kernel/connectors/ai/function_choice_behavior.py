@@ -188,6 +188,12 @@ class FunctionChoiceBehavior(KernelBaseModel):
             "required": cls.Required,
         }
         behavior_type = data.pop("type", "auto")
+        behavior_factory = type_map.get(behavior_type)
+        if behavior_factory is None:
+            raise ServiceInitializationError(
+                f"The specified type `{behavior_type}` is not supported. Allowed types are: `auto`, `none`, `required`."
+            )
+
         auto_invoke = data.pop("auto_invoke", False)
         functions = data.pop("functions", None)
         filters = data.pop("filters", None)
@@ -199,7 +205,7 @@ class FunctionChoiceBehavior(KernelBaseModel):
             else:
                 filters = {"included_functions": valid_fqns}
 
-        return type_map[behavior_type](  # type: ignore
+        return behavior_factory(  # type: ignore
             auto_invoke=auto_invoke,
             filters=filters,
             **data,
