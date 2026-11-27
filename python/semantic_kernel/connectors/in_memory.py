@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import ast
+import math
 import sys
 from collections.abc import AsyncIterable, Callable, Mapping, Sequence
 from typing import Any, ClassVar, Final, Generic, TypeVar, cast
@@ -907,10 +908,14 @@ class InMemoryCollection(
         distance_func: Callable,
         invert_score: bool = False,
     ) -> float:
-        calc = distance_func(record_vector, search_vector)
+        calc = float(distance_func(record_vector, search_vector))
+        if math.isnan(calc):
+            # A zero vector has undefined cosine similarity; keep it last
+            # instead of letting NaN break the sort order.
+            return -math.inf if invert_score else math.inf
         if invert_score:
-            return 1.0 - float(calc)
-        return float(calc)
+            return 1.0 - calc
+        return calc
 
     def _get_record_from_result(self, result: Any) -> Any:
         return result

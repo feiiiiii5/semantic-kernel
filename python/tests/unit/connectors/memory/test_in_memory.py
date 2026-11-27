@@ -307,6 +307,24 @@ async def test_vectorized_search_similar(collection, distance_function):
         idx += 1
 
 
+@mark.parametrize(
+    "distance_function",
+    [DistanceFunction.COSINE_DISTANCE, DistanceFunction.COSINE_SIMILARITY],
+)
+async def test_zero_vector_sorts_after_exact_match(collection, distance_function):
+    for field in collection.definition.fields:
+        if field.name == "vector":
+            field.distance_function = distance_function
+    zero = {"id": "zero", "content": "zero", "vector": [0.0, 0.0, 0.0, 0.0, 0.0]}
+    exact = {"id": "exact", "content": "exact", "vector": [1.0, 0.0, 0.0, 0.0, 0.0]}
+    await collection.upsert([zero, exact])
+
+    results = await collection.search(vector=[1.0, 0.0, 0.0, 0.0, 0.0], vector_property_name="vector")
+    found = [result.record async for result in results.results]
+
+    assert [record["id"] for record in found] == ["exact", "zero"]
+
+
 async def test_valid_lambda_filter(collection):
     record1 = {"id": "1", "vector": [1, 2, 3, 4, 5]}
     record2 = {"id": "2", "vector": [5, 4, 3, 2, 1]}
